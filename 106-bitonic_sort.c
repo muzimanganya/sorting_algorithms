@@ -1,112 +1,120 @@
 #include "sort.h"
-void compare_swap_down(int *array_init, int *array, size_t size_init, size_t size, int *flag)
-{
-	int n;
-	size_t i;
-	(void)array_init;
+#include <stdio.h>
 
-	//printf("compare_down\n");
-	if (flag[0] == 0)
-	{
-		for (i = 0; i < size/2 ; i++)
-		{
-			if (array[0] < array[size - 1])
-			{
-				n = array[0];
-				array[0] = array[size - 1];
-				array[size - 1] = n;
-				printf("Result [%lu/%lu] (DOWN):\n", size, size_init);
-				print_array(array, size);
-			}
-		}
-	}
-}
-void compare_swap_up(int *array_init, int *array, size_t size_init, size_t size, int *flag)
+/**
+ * printcheck - print a range
+ * @array: The array to print
+ * @r1: Less range
+ * @r2: Final range
+ * Return: Nothing
+ */
+void printcheck(int *array, int r1, int r2)
 {
-	int n;
-	size_t i;
-	(void)array_init;
+	int i;
 
-	//printf("size up:%lu\n", size);
-	//printf("array[0] up:%d\n", array[0]);
-	//printf("array[size-1] up:%d\n", array[size-1]);
-	//printf("compare_up\n");
-	if (flag[0] == 0)
+	for (i = r1; i <= r2; i++)
 	{
-		for (i = 0; i < size/2 ; i++)
-		{
-		if (array[0] > array[size - 1])
-		{
-			n = array[0];
-			array[0] = array[size - 1];
-			array[size - 1] = n;
-			printf("Result [%lu/%lu] (UP):\n", size, size_init);
-			print_array(array, size);
-		}
-		}
+		if (i > r1)
+			printf(", ");
+		printf("%d", array[i]);
 	}
-}
-void bitonic_deep_down(int *array_init, int *array, size_t size_init, size_t size, int *flag)
-{
-	(void)array;
-
-	//printf("deep_down_pre, size:%lu\n", size);
-	if (size < 2)
-	{
-		flag[0] = 0;
-		return;
-	}
-	//printf("deep_down:i=%lu\n", i);
-	printf("Merging [%lu/%lu] (DOWN):\n", size, size_init);
-	print_array(array, size);
-	bitonic_deep_up(array_init, array, size_init, size / 2, flag);
-	compare_swap_up(array_init, array, size_init, size, flag);
-	//flag[0] = 0;
-	bitonic_deep_down(array_init, array + (size/2), size_init, size / 2, flag);
-	//flag[0] = 1;
-	compare_swap_down(array_init, array, size_init, size, flag);
-	//compare_swap(array, 0, i);
-	//printf("despues de swap\n");
-	//print_array(array, size);
-}
-void bitonic_deep_up(int *array_init, int *array, size_t size_init, size_t size, int *flag)
-{
-	(void)array;
-
-	//printf("deep_up_pre, size:%lu\n", size);
-	if (size < 2)
-	{
-		flag[0] = 0;
-		return;
-	}
-	//printf("deep_up:i=%lu\n", i);
-	printf("Merging [%lu/%lu] (UP):\n", size, size_init);
-	print_array(array, size);
-	bitonic_deep_up(array_init, array, size_init, size / 2, flag);
-	compare_swap_up(array_init, array, size_init, size, flag);
-	bitonic_deep_down(array_init, array + (size/2), size_init, size / 2, flag);
-	compare_swap_down(array_init, array, size_init, size, flag);
-	//flag[0] = 1;
-	//compare_swap(array, 0, i);
-	//printf("despues de swap\n");
-	//print_array(array, size);
+	printf("\n");
 }
 /**
- *
- *
- *
- *
- **/
+ * _swap - swap two elements in an array
+ * @array: THe array to change the values
+ * @i: A index
+ * @j: Another index
+ * @dir: Direction of the array
+ * Return: Nothing
+ */
+void _swap(int *array, int i, int j, int dir)
+{
+	int tmp;
+
+	if (dir == (array[i] > array[j]))
+	{
+		tmp = array[i];
+		array[i] = array[j];
+		array[j] = tmp;
+	}
+}
+/**
+ * bitonic_merge - swap the elements to sort
+ * @array: Array to sort
+ * @low: The low element in the range to sort
+ * @size: The size of the range to sort
+ * @dir: Indicate which half are manage
+ * @r_size: The size of the all array
+ * Return: Nothing
+ */
+void bitonic_merge(int *array, int low, int size, int dir, const int r_size)
+{
+	int k = size, i = low;
+
+	if (size > 1)
+	{
+		k = size / 2;
+
+		for (i = low; i < low + k; i++)
+			_swap(array, i, i + k, dir);
+
+		bitonic_merge(array, low, k, dir, r_size);
+		bitonic_merge(array, low + k, k, dir, r_size);
+	}
+}
+/**
+ * _sort - segmentate the array
+ * @array: The array to sort
+ * @low: The lowest element in each range
+ * @size: Size of the range to sort
+ * @dir: Indicate which half are manage
+ * @r_size: The size of the all array
+ * Return: Nothing
+ */
+void _sort(int *array, int low, int size, int dir, const int r_size)
+{
+	int k = size;
+
+	if (size > 1)
+	{
+		if (dir == 1)
+			printf("Merging [%d/%d] (UP):\n", size, r_size);
+		if (dir == 0)
+			printf("Merging [%d/%d] (DOWN):\n", size, r_size);
+		printcheck(array, low, low + k - 1);
+
+		k = size / 2;
+		_sort(array, low, k, 1, r_size);
+
+		_sort(array, low + k, k, 0, r_size);
+
+		bitonic_merge(array, low, size, dir, r_size);
+		if (dir == 1)
+		{
+			printf("Result [%d/%d] (UP):\n", size, r_size);
+			printcheck(array, low, low + 2 * k - 1);
+		}
+		if (dir == 0)
+		{
+			printf("Result [%d/%d] (DOWN):\n", size, r_size);
+			printcheck(array, low, low + 2 * k - 1);
+		}
+	}
+}
+/**
+ * bitonic_sort - call the sort function
+ * @array: The array to sort
+ * @size: Size of the array
+ * Return: Nothing
+ */
 void bitonic_sort(int *array, size_t size)
 {
-	size_t size_init = size;
-	int *array_init = array;
-	int *flag;
-	int aux = {0};
+	int up = 1;
+	const int r_size = (int)size;
 
-	flag = &aux;
-	if (array)
-	{
-		bitonic_deep_up(array_init, array, size_init, size, flag);
-	}	
+	if (size < 2 || !array)
+		return;
+
+	_sort(array, 0, (int)size, up, r_size);
 }
